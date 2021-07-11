@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import Transaction from '../models/Transaction';
 
 import TransactionsRepository from '../repositories/TransactionsRepository';
-// import CreateTransactionService from '../services/CreateTransactionService';
+import CreateTransactionService from '../services/CreateTransactionService';
 
 const transactionRouter = Router();
 
@@ -21,18 +20,18 @@ transactionRouter.get('/', (request, response) => {
 
 transactionRouter.post('/', (request, response) => {
   try {
-    const { title, value, type } = request.body;
-    const transaction = new Transaction({ title, value, type });
-    const currentBalance = transactionsRepository.getBalance().total;
+    const transactionService = new CreateTransactionService(
+      transactionsRepository,
+    );
 
-    if (transaction.type === 'outcome' && transaction.value > currentBalance)
+    const newTransaction = transactionService.execute(request.body);
+
+    if (newTransaction === undefined)
       return response
         .status(400)
         .json({ error: 'Outcome value exceeds balance funds' });
 
-    transactionsRepository.create(transaction);
-
-    return response.json(transaction);
+    return response.json(newTransaction);
   } catch (err) {
     return response.status(400).json({ error: err.message });
   }
